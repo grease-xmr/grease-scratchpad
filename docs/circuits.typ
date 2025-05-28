@@ -15,6 +15,28 @@ The Grease protocol operates in four stages: initialization, update, closure and
 
 ...
 
+===== MoNet stages
+
+...
+
+#table(
+  columns: 3,
+  table.cell(colspan: 3, [*MoNet*]),
+  [*Stage*], [*Name*], [],
+  [1], [_Call 2P-CLRAS.JGen_], [The peers will use the well-established Monero wallet implementation of the DKG MPC to generate a 2-of-2 Monero wallet. Once complete, both peers will have the wallet view key vk-"AB" and each peer will have 1 of the 2 private spend keys tilde(sk). This wallet will require both $sigma_"vk"_A$ and $sigma_"vk"_B$ signatures to complete any transaction. Since the only outgoing transaction on this wallet is the $T_x_c$ close transaction, there will only be the 2 that complete.],
+  [2], [_Call 2P-CLRAS.SWGen_], [...],
+  [3], [_Generate $T_x_f$,  $T_x_c^0$_], [...],
+  [4], [_Call 2P-CLRAS.PSign_], [...],
+  [5], [_Call $"LRS.Sign"_"sk"_A (T_x_f)$_], [...],
+  [6], [_Obtain and send $sigma_"vk"_A$_], [...],
+  [7], [_Call $"LRS.Sign"_"sk"_B (T_x_f)$_], [...],
+  [8], [_Obtain and send $sigma_"vk"_B$_], [...],
+  [9], [_Broadcast signed $T_x_f$ to Monero_], [...],
+  [10], [_Channel Established_], [...],
+)
+
+...
+
 ==== Preliminary
 
 For the initialization stage to begin, the peers must agree upon a small amount of information:
@@ -54,7 +76,13 @@ At the start of the initialization stage the peers provide each other with the f
   [$nu_"peer"$], [Public], [Random 251 bit value, provided by the peer (`nonce_peer`)],
 )
 
-...
+Each each will create a new one-time key pair to use for communication with the KES in the case of a dispute. The peers share the public key to each other, referring to the other's as $Pi_"peer"$.
+
+The peers will also agree on a third party agent on the L2, knows as the Key Escrow Service (KES). When the peers agree on the particular KES, the publicly known public key to this service is shared as $Pi_"KES"$.
+
+During the interactive setup, the peers send each other a nonce $nu_"peer"$ that guarantees that critically important data must be new and unique for this channel. This prevents the reuse of old data held by the peers.
+
+The ZKP protocols prove that the real private keys are used correctly and that if a dispute is necessary, it will succeed.
 
 ==== Grease: During
 
