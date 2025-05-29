@@ -1,39 +1,21 @@
-#import "frontmatter.typ":format
+#import "frontmatter.typ":format, CJc, SMc
 #show: format
 
 = Grease ZKP operations
 
-The Grease protocol requires the creation and sharing of a series of Zero Knowledge proofs (ZKPs) as part of the lifetime of a payment channel. Most are Non-Interactive Zero Knowledge (NIZK) proofs in the form Turing-complete circuits created using newly-established Plonky-based proving protocols. The others are classical interactive protocols with verification.
+The Grease protocol requires the creation and sharing of a series of Zero Knowledge proofs (ZKPs) as part of the lifetime of a payment channel. Most are Non-Interactive Zero Knowledge (NIZK) proofs in the form of Turing-complete circuits created using newly-established Plonky-based proving protocols. The others are classical interactive protocols with verification.
 
 The Grease protocol operates in four stages: initialization, update, closure and dispute. The ZKPs are used only in the initialization and update stage, as the closure and dispute do not need further verification to complete.
 
-== Stages
+== Part 1: Protocol Stages
 
 === Initialization
 
 ==== Motivation
 
-...
+Using the Grease protocol, two peers may create a trustless agreement on how to share and divide a common locked amount of Monero XMR while minimizing the online transaction costs and with minimal use of outside trusted third parties.
 
-===== MoNet stages
-
-...
-
-#table(
-  columns: 3,
-  table.cell(colspan: 3, [*MoNet*]),
-  [*Stage*], [*Name*], [],
-  [1], [_Call 2P-CLRAS.JGen_], [The peers will use the well-established Monero wallet implementation of the DKG MPC to generate a 2-of-2 Monero wallet. Once complete, both peers will have the wallet view key vk-"AB" and each peer will have 1 of the 2 private spend keys tilde(sk). This wallet will require both $sigma_"vk"_A$ and $sigma_"vk"_B$ signatures to complete any transaction. Since the only outgoing transaction on this wallet is the $T_x_c$ close transaction, there will only be the 2 that complete.],
-  [2], [_Call 2P-CLRAS.SWGen_], [...],
-  [3], [_Generate $T_x_f$,  $T_x_c^0$_], [...],
-  [4], [_Call 2P-CLRAS.PSign_], [...],
-  [5], [_Call $"LRS.Sign"_"sk"_A (T_x_f)$_], [...],
-  [6], [_Obtain and send $sigma_"vk"_A$_], [...],
-  [7], [_Call $"LRS.Sign"_"sk"_B (T_x_f)$_], [...],
-  [8], [_Obtain and send $sigma_"vk"_B$_], [...],
-  [9], [_Broadcast signed $T_x_f$ to Monero_], [...],
-  [10], [_Channel Established_], [...],
-)
+The Grease protocol satisfices the security trilemma (Security, Decentralization, Scalability) by maintaining complete security and improving scalability at a minimal cost of network centralization.
 
 ...
 
@@ -58,10 +40,8 @@ The *MoNet* protocol specifies that the peers must agree upon the following usin
   table.cell(colspan: 2, [*Before Initialization*]),
   [*Resource*], [],
   [Monero Funding Wallet], [Each peer must have a source wallet with its private spend key. This wallet will need to have at least the *Locked Amount* available.],
-  [Monero Refund Wallet], [Each peer must have a destination wallet with its public key. This wallet will store the refunded XMR value after the channel is closed. The peer must have the private view key of this wallet, but does not need to have the private spend key.],
+  [Monero Refund Wallet], [Each peer must have a destination wallet #CJc[I presume an address suffices] #SMc[Yes, the public key is OK but we'll need the view key to make sure that the refund did actually occur, but we could optionally ignore this part and assume it went OK.] with its public key. This wallet will store the refunded XMR value after the channel is closed. The peer must have the private view key of this wallet, but does not technically need to have the private spend key. (Not having the private key for this wallet allows for certain security policies, such as cold wallet storage or mobile hot wallet exposure minimization.) #CJc[I totally missed this detail. Do explain why somewhere?]#SMc[Yes, this is for certain OPSEC since reusing hot wallets is a problem.]],
 )
-
-...
 
 ==== Grease: Before
 
@@ -76,19 +56,59 @@ At the start of the initialization stage the peers provide each other with the f
   [$nu_"peer"$], [Public], [Random 251 bit value, provided by the peer (`nonce_peer`)],
 )
 
-Each each will create a new one-time key pair to use for communication with the KES in the case of a dispute. The peers share the public key to each other, referring to the other's as $Pi_"peer"$.
-
 The peers will also agree on a third party agent on the L2, knows as the Key Escrow Service (KES). When the peers agree on the particular KES, the publicly known public key to this service is shared as $Pi_"KES"$.
 
-During the interactive setup, the peers send each other a nonce $nu_"peer"$ that guarantees that critically important data must be new and unique for this channel. This prevents the reuse of old data held by the peers.
+Each participant will create a new one-time key pair to use for communication with the KES in the case of a dispute. The peers share the public keys with each other, referring to the other's as $Pi_"peer"$.
+
+During the interactive setup, the peers send each other a nonce, $nu_"peer"$, that guarantees that critically important data must be new and unique for this channel. This prevents the reuse of old data held by the peers.
 
 The ZKP protocols prove that the real private keys are used correctly and that if a dispute is necessary, it will succeed.
 
+===== MoNet: During
+
+The *MoNet* protocol is very specific on its stages and operations. The newer Grease protocol maintains the main stages of the MoNet protocol in general but replaces the _2P-CLRAS.SWGen()_, _2P-CLRAS.NewSW()_ and _2P-CLRAS.CVrfy()_ functions. These functions were base on innovative and non-standard cryptographic methods that have not gained the general acceptance of the cryptographic community. This may change in time, while the MoNet protocol bypasses this by the use of general accepted methods.
+
+Note that the original MoNet protocol was not completely compatible with the existing Monero protocol due to the lack of Transaction Chains features. Note that this compatibility flaw will change with the $"FCMP++"$ update.
+
+The 10 stages of the MoNet protocol for initialization are:
+
+#table(
+  columns: 3,
+  table.cell(colspan: 3, [*MoNet*]),
+  [*Stage*], [*Name*], [],
+  [1], [_Call 2P-CLRAS.JGen_
+  
+  _and Obtain_ $("vk"_"AB",tilde("sk")_X)$], [The peers will use the well-established Monero wallet implementation of the DKG MPC to generate a 2-of-2 Monero wallet. Once complete, both peers will have the wallet view key $"vk"_"AB"$ and each peer will have 1 of the 2 private spend keys $tilde(k_i)$ / $tilde("sk")_X$. This wallet will require both $sigma_"vk"_A$ and $sigma_"vk"_B$ signatures to complete any transaction.
+  
+  Since the only outgoing transaction on this wallet is the $T_x_c$ commitment transaction, there will only be the 2 signatures.],
+  [2], [_Call 2P-CLRAS.SWGen()_
+  
+  _Obtain_ $(S^0, (S^0_X, omega^0_X),P^0_X)$], [This statement/witness generation function is replaced entirely by the Grease *VerifyWitness0* operation.
+  
+  Note that this is the stage at which all of the Grease operations for proving and verification will occur.],
+  [3.0], [_Generate $T_x_f$_], [The peers will collaborate to create the funding transaction $T_x_f$ that will require each peer to each create 2 inputs in the UTXO portion and 2 outputs in the TXO portion, so $T_x_f$ will have 4 inputs and 4 outputs. Since the peers will share the new wallet's view key $"vk"_"AB"$ the peers can verify that the right amount of output will be in the correct 2 outputs in the TXO portion.],
+  [3.5], [_Generate $T_x_c^0$_], [The peers will also collaborate to create the commitment transaction $T_x_c^0$ which will use the 2 outputs in the $T_x_f$ TXO portion as the 2 inputs in the $T_x_c^0$ UTXO portion, and 2 outputs in the UTXO portion which each have the current channel balance in XMR value assigned to the appropriate *Monero Refund Wallet* destination.
+  
+  Note that before the $"FCMP++"$ update there are no Transaction Chains features available, and the translation of the 2 outputs in the $T_x_f$ TXO portion to the 2 inputs in the $T_x_c^0$ UTXO portion requires that the funding transaction $T_x_f$ is mined on the Monero blockchain so that the *UTXO index numbers* will exist. This is possible only at step 10. This limitation can be bypassed by creating an unusable $T_x_c^0$ with invalid *UTXO index numbers* that may be verified by the peers but cannot be broadcast to the Monero network.],
+  [4], [_Call 2P-CLRAS.PSign()_
+  
+  _and Obtain $hat(sigma)^0_(tilde("sk")_A,tilde("sk")_B)$_ ], [The peers collaborate to create the unadapted signature $hat(sigma)^0_(tilde("sk")_A,tilde("sk")_B)$ for $T_x_c^0$ by using $tilde("sk")_X$ and verifying with $S^0_X$.],
+  [5, 6, 7, 8], [_Call $"LRS.Sign"_"sk"_X (T_x_f)$_ 
+  
+  _and Obtain $sigma_"vk"_X$_], [The peers verify that the complete $T_x_f$ is valid and use their *Monero Funding Wallet* private spend key to create the funding signatures $sigma_"vk"_X$.],
+  [9], [_Broadcast signed $T_x_f$ to Monero_], [With the preliminaries complete, one of the peers broadcasts the complete $T_x_f$ to the Monero network. Both peers verify that $T_x_f$ is pending mining.],
+  [10], [_Channel Established_], [Once $T_x_f$ is mined on the Monero blockchain, the channel is established.
+  
+  Note that before the $"FCMP++"$ update the peers can decide on whether to recompute step 3.5 to ensure that $T_x_c^0$ is usable.],
+)
+
 ==== Grease: During
 
-...
+As a substitute for *MoNet* protocol stage 2, Grease requires the generation and sharing of the ZKPs. The public data and the small proofs are shared between peers, then are validated as a means to ensure protocol conformity before *MoNet* protocol stage 3 begins.
 
-==== Inputs:
+The ZKP operations require random values to ensure security of communications. These are not shared with the peer:
+
+===== Inputs:
 #table(
   columns: 3,
   table.cell(colspan: 3, [*During Initialization*]),
@@ -100,9 +120,9 @@ The ZKP protocols prove that the real private keys are used correctly and that i
   [$nu_"DLEQ"$], [Private], [Random 251 bit value (`blinding_DLEQ`)],
 )
 
-...
+The ZKP operations produce output values, the publicly visible values must be shared with the peer in addition to the generated proofs while the privately visible values must be stored for later usage.
 
-==== Outputs:
+===== Outputs:
 #table(
   columns: 3,
   table.cell(colspan: 3, [*During Initialization*]),
@@ -124,43 +144,123 @@ The ZKP protocols prove that the real private keys are used correctly and that i
   [$rho_"Ed25519"$], [Public], [The Fiat–Shamir heuristic challenge response on the Ed25519 curve (`response_div_ed25519`)],
 )
 
-...
-
-The following ZKP operations are performed during initialization:
+During the initialization stage, the following operations are performed:
 
 - *VerifyWitness0*
 - *VerifyWitnessSharing*
 - *VerifyEquivalentModulo*
 - *VerifyDLEQ*
 
+Particular details about these operations can be found in *Part 2: Grease ZKP Operations*. 
+
+==== Grease: After
+
+After receiving the publicly visible values and ZK proofs from the peer Grease will run the ZKP verification process
+
 ...
+
+Once verified, the following resources and information are available and must be stored:
+
+#table(
+  columns: 2,
+  table.cell(colspan: 2, [*After Initialization*]),
+  [*Resource*], [],
+  [$Phi_1$], [The ephemeral public key/curve point on Baby Jubjub for message transportation from the peer (`fi_1`)],
+  [$chi_1$], [The encrypted value of $sigma_1$ (`enc_1`) for the peer's $omega_0$],
+  [$omega_0$], [The root private key protecting access to the user's locked value (`witness_0`)],
+  [$S_0$], [The public key/curve point on Ed25519 for the peer's $omega_0$],
+)
 
 ==== MoNet: After
 
-Once the Grease ZKP operations are complete, the *MoNet* protocol continues and produces the following outputs:
-
 ...
 
-==== Outputs:
 #table(
-  columns: 3,
-  table.cell(colspan: 3, [*After Initialization*]),
-  [*Output*], [*Visibility*], [],
-  [$T_x_f$], [Public], [...],
-  [$s_f$], [Public], [...],
-  [$s_f_"peer"$], [Public], [...],
-  [$T_x_c$], [Public], [...The unsigned Monero transaction for closing the channel. This can be completed only by the full knowledge of $sigma_c$ and $sigma_c_"peer"$...],
-  [$hat(sigma)_c$], [Public], [...The unadapted signature for $sigma_c$ and hence $T_x_c$...],
-  [$S_0$], [Public], [The public key/curve point on Ed25519 for $omega_0$. This is used to prove that $hat(sigma)_"c"$ is a valid unadapted signature for $sigma_"c"$ and hence $T_x_c$.],
-  [$sigma_c$], [Private], [...The adapted signature for $sigma_c$ and hence $T_x_c$...],
-  [$hat(sigma)_c_"peer"$], [Public], [...The unadapted signature for $sigma_c_"peer"$ and hence $T_x_c_"peer"$...],
-  [$S_0_"peer"$], [Public], [The public key/curve point on Ed25519 for the other peer's $omega_0$. This is used to prove that $hat(sigma)_c_"peer"$ is a valid unadapted signature for $sigma_c_"peer"$ and hence $T_x_c_"peer"$.],
-  [$sigma_c_"peer"$], [Private], [...The adapted signature for $sigma_c_"peer"$ and hence $T_x_c_"peer"$...],
+  columns: 2,
+  table.cell(colspan: 2, [*After Initialization*]),
+  [*Resource*], [],
+  [$"vk"_"AB"$], [The temporary wallet view key],
+  [$tilde("sk")_X$], [The temporary wallet view key spend key],
+  [$T_x_c^0$], [The commitment transaction that closes the channel],
 )
 
 With these outputs the the initialization stage is complete and the channel is open. The peers can now transact and update the channel state or close the channel and receive the locked XMR value in the *Monero Refund Wallet*.
 
 === Update
+
+==== Motivation
+
+Once a channel is open the peers may decide to update the channel balance between the peers. The only requirement is that the peers agree on the change in ownership of the *Locked Amount*.
+
+Note that with an open channel there is no internal reason to perform an update outside of a peer-initiated change. However, the current Monero protocol requires that a newly broadcast transaction be created within a reasonable timeframe. The $"FCMP++"$ update does not change the need for this, but does alter the timeframe. As such, existing open channel should create a "zero delta" update at reasonable timeframes to ensure the channel may be closed arbitrarily. The specifics on this are outside of current scope.
+
+==== Preliminary
+
+For the update stage to begin, the peers must agree upon a small amount of information:
+
+#table(
+  columns: 2,
+  table.cell(colspan: 2, [*Before Update*]),
+  [*Resource*], [],
+  [Delta], [The change in the two values in XMR (positive or negative) from the previous stage. This is a single number since the *Locked Amount* must stay the same.],
+)
+
+===== MoNet: During
+
+...
+
+#table(
+  columns: 3,
+  table.cell(colspan: 3, [*MoNet*]),
+  [*Stage*], [*Name*], [],
+  [11], [_Call 2P-CLRAS.NewSW()_
+  
+  _Obtain_ $(S^i, (S^i_X, omega^i_X),P^i_X)$], table.cell(rowspan: 2, [This statement/witness generation function is replaced entirely by the Grease *VerifyCOF* operation, and the verification function is replaced entirely by the Grease *VerifyDLEQ* operation.
+  
+  Note that this is the stage at which all of the Grease operations for proving and verification will occur.]),
+  [12], [_If 2P-CLRAS.CVrfy_ $((S^(i-1)_X,S^i_X),P^i_X)) = 0 : ⊥$],
+  [13], [_Elif Call 2P-CLRAS.PSign()_
+  
+  _and Obtain $hat(sigma)^i_(tilde("sk")_A,tilde("sk")_B)$_ ], [The peers collaborate to create the unadapted signature $hat(sigma)^i_(tilde("sk")_A,tilde("sk")_B)$ for new $T_x_c^i$ by using $tilde("sk")_X$ and verifying with $S^i_X$.],
+)
+
+...
+
+==== Grease: During
+
+...
+
+===== Inputs:
+#table(
+  columns: 3,
+  table.cell(colspan: 3, [*During Update*]),
+  [*Input*], [*Visibility*], [],
+  [$omega_(i-1)$], [Private], [The current private key protecting access to close the payment channel (`witness_im1`)],
+  [$nu_"DLEQ"$], [Private], [Random 251 bit value (`blinding_DLEQ`)],
+)
+
+...
+
+===== Outputs:
+#table(
+  columns: 3,
+  table.cell(colspan: 3, [*During Update*]),
+  [*Output*], [*Visibility*], [],
+  [$T_(i-1)$], [Public], [The public key/curve point on Baby Jubjub for $omega_(i-1)$],
+  [$T_i$], [Public], [The public key/curve point on Baby Jubjub for $omega_i$],
+  [$omega_i$], [Private], [The next private private key protecting access to close the payment channel (`witness_i`)],
+  [$S_i$], [Public], [The public key/curve point on Ed25519 for $omega_i$],
+  [C], [Public], [The Fiat–Shamir heuristic challenge (`challenge_bytes`)],
+  [$Delta_"BabyJubjub"$], [Private], [Optimization parameter (`response_div_BabyJubjub`)],
+  [$rho_"BabyJubjub"$], [Public], [The Fiat–Shamir heuristic challenge response on the Baby Jubjub curve (`response_BabyJubJub`)],
+  [$Delta_"Ed25519"$], [Private], [Optimization parameter (`response_div_BabyJubJub`)],
+  [$rho_"Ed25519"$], [Public], [The Fiat–Shamir heuristic challenge response on the Ed25519 curve (`response_div_ed25519`)],
+  [$C$], [Public], [The Fiat–Shamir heuristic challenge (`challenge_bytes`)],
+  [$R_"BabyJubjub"$], [Public], [DLEQ commitment 1, which is a public key/curve point on Baby Jubjub (`R_1`)],
+  [$R_"Ed25519"$], [Public], [DLEQ commitment 2, which is a public key/curve point on Ed25519 (`R_2`)],
+)
+
+...
 
 During the update stage, the following operations are performed:
 
@@ -170,7 +270,24 @@ During the update stage, the following operations are performed:
 
 ...
 
-== Operations
+==== Final Outputs:
+
+...
+
+#table(
+  columns: 2,
+  table.cell(colspan: 2, [*After Update*]),
+  [*Resource*], [],
+  [$T_x_c^i$], [...],
+  [$omega_i$], [The current private key protecting access to close the payment channel (`witness_i`)],
+  [$S_i$], [The public key/curve point on Ed25519 for the peer's $omega_i$],
+)
+
+With these outputs the the update stage is complete and the channel remains open. The peers can now transact further updates or close the channel and receive the locked XMR value in the *Monero Refund Wallet*.
+
+== Part 2: Grease ZKP Operations
+
+...
 
 === VerifyWitness0
 

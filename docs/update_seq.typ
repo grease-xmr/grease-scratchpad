@@ -1,5 +1,6 @@
 #import "frontmatter.typ":format, CJc, SMc
 #import "@preview/pintorita:0.1.4"
+#import "nomenclature.typ": *
 
 #show: format
 #show raw.where(lang: "pintora"): it => pintorita.render(it.text)
@@ -43,19 +44,19 @@ The responder, receives the `ChannelUpdate` record and then
 
 The responder then generates its own set of three proofs and responds with its own version of `ChannelUpdate`.
 
-The responder updates its internal state with the new $omega_i$ derived from the proofs as follows:
+The responder updates its internal state with the new $witness_i$ derived from the proofs as follows:
 
 $
-  C = H_"blake2s" ("HEADER" || omega_(i-1)) \
-  omega_i = C mod L_"BabyJubjub" \
-  T_i = omega_i dot.c G_"BabyJubjub" \
-  S_i = omega_i dot.c G_"Ed25519" \
+  C = H_"blake2s" ("HEADER" || witness_(i-1)) \
+  witness_i = C mod Lbjj \
+  T_i = witness_i dot.c Gbjj \
+  S_i = witness_i dot.c Ged \
 $
 
 This is equivalent to the MoNet protocol step 11:
 
 $
-"2P-CLRAS"."NewSW()" => (S^i,(S^i_X, omega^i_X),P^i_X)
+"2P-CLRAS"."NewSW()" => (S^i,(S^i_"Responder", witness^i_"Responder"),P^i_"Responder")
 $
 
 == Third Step
@@ -65,34 +66,54 @@ The initiator receives the `ChannelUpdate` in the response from the responder an
 This is equivalent to the MoNet protocol step 12:
 
 $
-"2P-CLRAS"."CVrfy"((S^(i-1)_X, S^i_X),P^i_X)
+"2P-CLRAS"."CVrfy"((S^(i-1)_"Responder", S^i_"Responder"),P^i_"Responder")
 $
 
-#CJc["I feel like there needs to be another step here where the outputs of the proofs get combined or something."
-
-The above step 2 and 3 are MoNet steps 11 and 12 exactly. But we need to sequence step 13 which performs the unadapted signature generation and is interactive so requires 2 actual steps.]
-
-The initiator next calculates the new $omega_i$ in the same manner as the responder.
+The initiator next calculates the new $witness_i$ in the same manner as the responder.
 
 == Fourth Step
 
+The responder
+
 ...
 
-This is equivalent to the MoNet protocol step 11:
+This is equivalent to the MoNet protocol step 12:
 
 $
-"2P-CLRAS"."PSign()" => hat(sigma)^i_"sk"_X
+"2P-CLRAS"."CVrfy"((S^(i-1)_"Initiator", S^i_"Initiator"),P^i_"Initiator")
 $
+
+...
+
+This is equivalent to the MoNet protocol step 13:
+
+$
+"2P-CLRAS"."PSign()" => hat(sigma)^i_"sk"_"Initiator"
+$
+
+...
 
 
 == Fifth Step
 
 ...
 
+This is equivalent to the MoNet protocol step 13:
+
+$
+"2P-CLRAS"."PSign()" => hat(sigma)^i_"sk"_"Responder"
+$
+
+...
+
+= Nomenclature
+
+#nomenclature
+
 = Sequence diagram
 
 
-```pintora
+```//pintora - slows down rendering. remove later
 sequenceDiagram
    participant I as Initiator
    participant R as Responder

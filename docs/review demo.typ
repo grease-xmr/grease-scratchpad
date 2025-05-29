@@ -81,3 +81,23 @@ sequenceDiagram
     end
     
 ```
+
+= Demo nomenclature
+
+#let sk = $tilde(k)$
+#let PK = $overline(P)$
+#let sig(i) = { $sigma_("VK"_#i)$ }
+#let pubOf(k, P) = { $#P = #k dot.op G$ }
+
+#table(
+  columns: 2, align: (left, center), 
+  table.header( [*Symbol*], [*Description*]),
+  $sk_i$, [secret key for $i$],
+  $PK_i$, [public key for $i$], 
+  $sig(J)$, [signature for J],
+  $sig(K)$, [signature for K],
+  $PK_a$, [Alice's public key, $pubOf(sk_a, PK_a)$]
+)
+
+That's really cool. A function recursively calling variable bindings. so, `pubOf(sk_a, PK_a)` inserts the correct symbols for private and public keys as parameters into the `pubOf` function that expands to the elliptic curve operation. :chef's kiss:
+

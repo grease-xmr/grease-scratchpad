@@ -24,9 +24,11 @@
   
   drafting.set-page-properties(margin-left: 4cm, margin-right: 4cm)
 
-
+ 
+ 
   doc
 }
+
 
 #let CJc = drafting.margin-note.with(stroke: blue)
 #let SMc = drafting.margin-note.with(stroke: green)
