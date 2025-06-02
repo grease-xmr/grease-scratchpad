@@ -108,7 +108,13 @@ $
 
 = Nomenclature
 
+== Variables
+
 #nomenclature
+
+== Subscripts
+
+#subscripts
 
 = Sequence diagram
 

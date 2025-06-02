@@ -46,3 +46,5 @@ $
   therefore H(r_i dot.c P_i) &equiv m_i \
                              &= H(k_i dot.c R)
 $
+
+#emoji.hand.r
